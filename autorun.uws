@@ -1,0 +1,332 @@
+//---------------------------------------------------------------------
+// Time Clickers 自動実行スクリプト
+// ( UWSC 5.1.1 Firefox 39.0 にて動作確認 )
+//  ※ クリック系はバックグラウンド処理中は動かない
+//  ※ キー入力チェックをスレッドにすると
+//     他の作業中にバックグラウンド処理が拾ってしまう
+//---------------------------------------------------------------------
+
+Option Explicit
+
+//---------------------------------------------------------------------
+// 変数・定数宣言
+//---------------------------------------------------------------------
+
+Public TIME_YY      //年 4桁
+Public TIME_MM      //月 01 - 12
+Public TIME_DD      //日 01 - 31
+Public TIME_HH      //時 00 - 23
+Public TIME_NN      //分 00 - 59
+Public TIME_SS      //秒 00 - 59
+Public GETTIME_sec  //GETTIME()の戻り値
+
+Public resetTime                        //リセット実施(初回起動)時刻
+Public resetInterval                    //リセット実行間隔
+Public nextCaptureTime                  //次のスクリーンショット取得時刻
+Public captureCount                     //スクリーンショットカウンター
+
+Dim lastActiveTime                      //Ability起動時刻
+Dim lastCooldownTime                    //Cooldown起動時刻
+
+Const activeAbilityInterval  = 120      //Active All Ability実行間隔
+Const initCooldownInterval   = 150      //リセット後にCooldownをアクティブにする間隔
+Const activeCooldownInterval = 3180     //Cooldown実行間隔
+Const initResetInterval      = 4800     //リセット実行間隔初期値
+
+//ブロッククリック開始座標
+Const clickStartPosition_x = 280
+Const clickStartPosition_y = 80
+Const increment_x = 50                  //X座標増分
+Const increment_y = 50                  //Y座標増分
+
+//TIME WARPボタン(ACTIME ABILITIES UNLOCKボタン)の座標
+Const timeWarpPosition_x = 950
+Const timeWarpPosition_y = 270
+
+// リセット実施YESボタン座標
+Const timeWarpConfirmPositon_x = 420
+Const timeWarpConfirmPositon_y = 330
+
+// CLICK PISTOL BUYボタン座標
+Const clickPistolPosiotn_x = 950
+Const clickPistolPosiotn_y = 200
+
+//---------------------------------------------------------------------
+// スクリプト実行方法の確認(デフォルト：アクティブ実行)
+//---------------------------------------------------------------------
+Dim executeType = SLCTBOX(SLCT_RDO, 10, "実行タイプを選んでください", "アクティブ", "バックグラウンド")
+
+ifb executeType = 0
+  MsgBox("タイムアウトしました")
+  EXITEXIT
+elseif executeType = -1
+  MsgBox("処理を中止しました")
+  EXITEXIT
+endif
+
+//---------------------------------------------------------------------
+// 画面ID、ハンドルの取得
+//---------------------------------------------------------------------
+Dim windowId = GETID("Time Clickers")
+Dim handle = GETCTLHND(windowId, "Unity.WebPlayer")
+
+ifb windowId < 0
+  MsgBox("対象のウインドウが起動していません")
+  EXITEXIT
+endif
+
+ifb handle < 0
+  MsgBox("Unity.WebPlayerがありません")
+  EXITEXIT
+endif
+
+PRINT "画面ID = " + windowId
+PRINT "Unity.WebPlayerハンドル = " + handle
+
+//---------------------------------------------------------------------
+// クリック位置をクライアント座標(UnityWebPlayer内の座標)にする
+//---------------------------------------------------------------------
+ifb executeType = SLCT_1
+  MOUSEORG(handle, MORG_CLIENT) 
+elseif executeType = SLCT_2
+  MOUSEORG(handle, MORG_DIRECT) 
+endif
+
+//---------------------------------------------------------------------
+// 変数初期化
+//---------------------------------------------------------------------
+resetTime        = customizedGetTime()
+nextCaptureTime  = resetTime
+captureCount     = 0
+lastActiveTime   = resetTime
+lastCooldownTime = resetTime
+resetInterval    = initResetInterval
+
+//開始メッセージをログに出力
+printDateAndMessage("start script")
+
+//---------------------------------------------------------------------
+// リセットしてからスクリプトを実行するか確認(デフォルト：リセットなし)
+//---------------------------------------------------------------------
+Dim initialResetFlag = SLCTBOX(SLCT_RDO, 10, "スクリプト実行前にリセットしますか？", "NO(リセットなし)", "YES")
+//リセットなし
+ifb initialResetFlag = SLCT_1
+  customizedGetTime(initResetInterval/60/60/24)
+  printMessageAndDate("auto reset →")
+//リセットあり
+elseif initialResetFlag = SLCT_2
+  
+  resetAndInitialProcess()
+  
+  printDateAndMessage("reset")
+    
+  customizedGetTime(resetInterval/60/60/24)
+  printMessageAndDate("auto reset →")
+    
+  resetTime = customizedGetTime()
+  lastActiveTime = resetTime
+  lastCooldownTime = resetTime
+endif
+
+
+//---------------------------------------------------------------------
+// スレッド ※リセット効率のチェック時に使用する
+//---------------------------------------------------------------------
+//THREAD capture()
+
+
+//---------------------------------------------------------------------
+// スクリプト本体
+//---------------------------------------------------------------------
+WHILE TRUE
+  
+  //-----------------------------------------------------------------
+  // ブロッククリック ※バックグラウンドではマウスポインタが動かない
+  //-----------------------------------------------------------------
+  Dim i, j
+  Dim coordinate_x, coordinate_y
+  
+  FOR i = 1 TO 10
+    FOR j = 1 TO 10
+      coordinate_x = clickStartPosition_x + increment_x * (i - 1)
+      coordinate_y = clickStartPosition_y + increment_y * (j - 1)
+      BTN(LEFT,CLICK,coordinate_x,coordinate_y)
+    NEXT
+  NEXT
+  
+  //----------------------------------------------------
+  // Auto Upgrade
+  //----------------------------------------------------
+  KBD(VK_A,CLICK)                 // PULSE PISTOL
+  KBD(VK_S,CLICK)                 // FLAK CANNON
+  KBD(VK_D,CLICK)                 // SOREAD RIFLE
+  KBD(VK_F,CLICK)                 // POCKET LAUNCHER
+  KBD(VK_G,CLICK)                 // PARTICLE BALL
+  
+  //----------------------------------------------------
+  // Active All Ability
+  //----------------------------------------------------
+  //一定時間でAbilityをアクティブにする
+  ifb (customizedGetTime() - lastActiveTime) >= activeAbilityInterval
+    KBD(VK_SPACE,CLICK)
+    
+    lastActiveTime = customizedGetTime()
+    
+  endif
+  
+  //----------------------------------------------------
+  // Active Cooldown
+  //----------------------------------------------------
+  //スクリプト起動(またはリセット)して一定時間後にCooldownをアクティブにする(1回のみ)
+  ifb (lastCooldownTime = resetTime) AND ((customizedGetTime() - resetTime) > initCooldownInterval)
+    KBD(VK_0,CLICK)
+    
+    lastCooldownTime = customizedGetTime()
+    
+  endif
+  
+  //一定間隔でCooldownをアクティブにする
+  ifb customizedGetTime() >= (lastCooldownTime + activeCooldownInterval)
+    KBD(VK_0,CLICK)
+    
+    lastCooldownTime = customizedGetTime()
+    
+  endif
+  
+  //----------------------------------------------------
+  // リセット＋初期処理
+  // リセット延長できるようにした(放置してる場合は自動でリセット)
+  //----------------------------------------------------
+  //スクリプト起動(またはリセット)して一定時間後にリセット
+  ifb (customizedGetTime() - resetTime) >= resetInterval
+    Dim resetConfirm = SLCTBOX(SLCT_RDO, 10, "リセットしますか？", "YES", "NO")
+    Dim resetMessage = "reset cancel"
+    
+    //タイムアウトかYESの場合リセット実施
+    ifb resetConfirm = 0 OR resetConfirm = SLCT_1
+      
+      resetAndInitialProcess()
+      
+      resetMessage = "reset"
+      
+      //リセット間隔を初期化
+      resetInterval = initResetInterval
+      
+      //スクリーンショット関連も初期化
+      captureCount = 0
+      //nextCaptureTime = resetTime
+      
+    else
+      //10分後に再度リセット確認
+      resetInterval = 600
+      
+    endif
+    
+    printDateAndMessage(resetMessage)
+    
+    //次のリセット時刻を取得
+    customizedGetTime(resetInterval/60/60/24)
+    printMessageAndDate("auto reset →")
+    
+    resetTime = customizedGetTime()
+    lastActiveTime = resetTime
+    lastCooldownTime = resetTime
+    nextCaptureTime = resetTime
+    
+  endif
+
+WEND
+
+//---------------------------------------------------------------------
+// GETTIMEで取得できる値をグローバル変数に保持させる
+//---------------------------------------------------------------------
+FUNCTION customizedGetTime(adjustmentValue = EMPTY)
+  
+  ifb adjustmentValue = EMPTY
+    RESULT = GETTIME()
+  else
+    RESULT = GETTIME(adjustmentValue)
+  endif
+  
+  //念のためPublic変数に保持
+  GETTIME_sec = RESULT
+  
+  TIME_YY = G_TIME_YY4
+  TIME_MM = G_TIME_MM2
+  TIME_DD = G_TIME_DD2
+  TIME_HH = G_TIME_HH2
+  TIME_NN = G_TIME_NN2
+  TIME_SS = G_TIME_SS2
+  
+FEND
+
+//---------------------------------------------------------------------
+// 日付＋メッセージをログに出力
+//---------------------------------------------------------------------
+PROCEDURE printDateAndMessage(message)
+  
+  PRINT "" + TIME_YY + "/" + TIME_MM + "/" + TIME_DD + " " + TIME_HH + ":" + TIME_NN + ":" + TIME_SS + " " + message
+  
+FEND
+
+//---------------------------------------------------------------------
+// メッセージ＋日付をログに出力
+//---------------------------------------------------------------------
+PROCEDURE printMessageAndDate(message)
+  
+  PRINT message + " " + TIME_YY + "/" + TIME_MM + "/" + TIME_DD + " " + TIME_HH + ":" + TIME_NN + ":" + TIME_SS
+  
+FEND
+
+//---------------------------------------------------------------------
+// リセット実行と初期処理
+//---------------------------------------------------------------------
+PROCEDURE resetAndInitialProcess()
+  
+  Dim i, j
+  
+  //「TIME WARP」をクリック
+  BTN(LEFT,CLICK,timeWarpPosition_x,timeWarpPosition_y,300)
+  //「YES」をクリック
+  BTN(LEFT,CLICK,timeWarpConfirmPositon_x,timeWarpConfirmPositon_y,300)
+  
+  //「PISTOL LEVEL UP」をクリック
+  FOR i = 1 TO 13
+    BTN(LEFT,CLICK,clickPistolPosiotn_x,clickPistolPosiotn_y,300)
+  NEXT
+  
+  //「UNLOCK ACTIVE ABILITIES」をクリック
+  FOR i = 1 TO 11
+    BTN(LEFT,CLICK,timeWarpPosition_x,timeWarpPosition_y,300)
+  NEXT
+  
+  //「Dimension Shift」を アクティブ に
+  KBD(VK_7,CLICK)
+  
+FEND
+
+//---------------------------------------------------------------------
+// 一定間隔でスクリーンショットを撮る(TimeCube数確認用)
+//---------------------------------------------------------------------
+PROCEDURE capture()
+  
+  Const saveDirectory   = GET_UWSC_DIR + "\screenshot\"
+  Const captureInterval = 300
+    
+  WHILE TRUE  
+    ifb customizedGetTime() >= nextCaptureTime
+      
+      // 年月日時分秒_目安の経過時間.bmp形式で保存
+      Dim file_path = saveDirectory + TIME_YY + TIME_MM + TIME_DD + TIME_HH + TIME_NN + TIME_SS + "_" + (captureInterval * captureCount)
+      captureCount = captureCount + 1
+      
+      SAVEIMG(file_path, GETID("Time Clickers"), , , , , , 0, 0)
+      
+      printDateAndMessage("captured")
+      
+      nextCaptureTime = nextCaptureTime + captureInterval
+      
+    endif
+  WEND
+  
+FEND
