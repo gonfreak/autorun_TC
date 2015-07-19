@@ -134,16 +134,19 @@ elseif initialResetFlag = SLCT_2
   resetTime = customizedGetTime()
   lastActiveTime = resetTime
   lastCooldownTime = resetTime
+  nextCaptureTime  = resetTime
 endif
 
 
 //---------------------------------------------------------------------
 // スレッド ※リセット効率のチェック時に使用する
 //---------------------------------------------------------------------
-Dim captureFlag = SLCTBOX(SLCT_RDO, 10, "定期的にスクリーンショットを撮影しますか？", "NO(撮影しない)", "YES")
+ifb initialResetFlag = SLCT_2
+  Dim captureFlag = SLCTBOX(SLCT_RDO, 10, "定期的にスクリーンショットを撮影しますか？", "NO(撮影しない)", "YES")
 
-ifb captureFlag = SLCT_2
-  THREAD capture()
+  ifb captureFlag = SLCT_2
+    THREAD capture()
+  endif
 endif
 
 //---------------------------------------------------------------------
@@ -321,7 +324,7 @@ FEND
 //---------------------------------------------------------------------
 PROCEDURE capture()
 
-  Const saveDirectory   = GET_UWSC_DIR + "\screenshot\"
+  Const saveDirectory   = GET_CUR_DIR + "\screenshot\"
   Const captureInterval = 300
 
   //保存先のフォルダが存在しない場合は終了
