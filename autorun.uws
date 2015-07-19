@@ -12,44 +12,50 @@ Option Explicit
 // 変数・定数宣言
 //---------------------------------------------------------------------
 
-Public TIME_YY      //年 4桁
-Public TIME_MM      //月 01 - 12
-Public TIME_DD      //日 01 - 31
-Public TIME_HH      //時 00 - 23
-Public TIME_NN      //分 00 - 59
-Public TIME_SS      //秒 00 - 59
-Public GETTIME_sec  //GETTIME()の戻り値
+Public TIME_YY          //年 4桁
+Public TIME_MM          //月 01 - 12
+Public TIME_DD          //日 01 - 31
+Public TIME_HH          //時 00 - 23
+Public TIME_NN          //分 00 - 59
+Public TIME_SS          //秒 00 - 59
+Public GETTIME_sec      //GETTIME()の戻り値
 
-Public resetTime                        //リセット実施(初回起動)時刻
-Public resetInterval                    //リセット実行間隔
-Public nextCaptureTime                  //次のスクリーンショット取得時刻
-Public captureCount                     //スクリーンショットカウンター
+Public resetTime        //リセット実施(初回起動)時刻
+Public resetInterval    //リセット実行間隔
+Public nextCaptureTime  //次のスクリーンショット取得時刻
+Public captureCount     //スクリーンショットカウンター
 
-Dim lastActiveTime                      //Ability起動時刻
-Dim lastCooldownTime                    //Cooldown起動時刻
+Dim lastActiveTime      //Ability起動時刻
+Dim lastCooldownTime    //Cooldown起動時刻
 
-Const activeAbilityInterval  = 120      //Active All Ability実行間隔
-Const initCooldownInterval   = 150      //リセット後にCooldownをアクティブにする間隔
-Const activeCooldownInterval = 3180     //Cooldown実行間隔
-Const initResetInterval      = 4800     //リセット実行間隔初期値
+//スクリプト用iniファイルの存在チェック
+if FOPEN(GET_CUR_DIR + "\" + "autorun.ini", F_EXISTS) = FALSE
+  MSGBOX("設定ファイルが存在しません")
+  EXITEXIT
+endif
+
+Const activeAbilityInterval  = READINI("SETTING", "activeAbilityInterval")   //Active All Ability実行間隔
+Const initCooldownInterval   = READINI("SETTING", "initCooldownInterval")    //リセット後にCooldownをアクティブにする間隔
+Const activeCooldownInterval = READINI("SETTING", "activeCooldownInterval")  //Cooldown実行間隔
+Const initResetInterval      = READINI("SETTING", "initResetInterval")       //リセット実行間隔初期値
 
 //ブロッククリック開始座標
-Const clickStartPosition_x = 280
-Const clickStartPosition_y = 80
-Const increment_x = 50                  //X座標増分
-Const increment_y = 50                  //Y座標増分
+Const clickStartPosition_x = READINI("SETTING", "clickStartPosition_x")
+Const clickStartPosition_y = READINI("SETTING", "clickStartPosition_y")
+Const increment_x = READINI("SETTING", "increment_x")                        //X座標増分
+Const increment_y = READINI("SETTING", "increment_y")                        //Y座標増分
 
 //TIME WARPボタン(ACTIME ABILITIES UNLOCKボタン)の座標
-Const timeWarpPosition_x = 950
-Const timeWarpPosition_y = 270
+Const timeWarpPosition_x = READINI("SETTING", "timeWarpPosition_x")
+Const timeWarpPosition_y = READINI("SETTING", "timeWarpPosition_y")
 
 // リセット実施YESボタン座標
-Const timeWarpConfirmPositon_x = 420
-Const timeWarpConfirmPositon_y = 330
+Const timeWarpConfirmPositon_x = READINI("SETTING", "timeWarpConfirmPositon_x")
+Const timeWarpConfirmPositon_y = READINI("SETTING", "timeWarpConfirmPositon_y")
 
 // CLICK PISTOL BUYボタン座標
-Const clickPistolPosiotn_x = 950
-Const clickPistolPosiotn_y = 200
+Const clickPistolPosiotn_x = READINI("SETTING", "clickPistolPosiotn_x")
+Const clickPistolPosiotn_y = READINI("SETTING", "clickPistolPosiotn_y")
 
 //---------------------------------------------------------------------
 // スクリプト実行方法の確認(デフォルト：アクティブ実行)
