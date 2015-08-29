@@ -1,9 +1,6 @@
 //---------------------------------------------------------------------
 // Time Clickers 自動実行スクリプト
 // ( UWSC 5.1.1 Firefox 39.0 にて動作確認 )
-//  ※ クリック系はバックグラウンド処理中は動かない
-//  ※ キー入力チェックをスレッドにすると
-//     他の作業中にバックグラウンド処理が拾ってしまう
 //---------------------------------------------------------------------
 
 Option Explicit
@@ -25,18 +22,12 @@ Public resetInterval    //リセット実行間隔
 Public nextCaptureTime  //次のスクリーンショット取得時刻
 Public captureCount     //スクリーンショットカウンター
 
-Dim lastActiveTime      //Ability起動時刻
-Dim lastCooldownTime    //Cooldown起動時刻
-
 //スクリプト用iniファイルの存在チェック
 if FOPEN(GET_CUR_DIR + "\" + "autorun.ini", F_EXISTS) = FALSE
   MSGBOX("設定ファイルが存在しません")
   EXITEXIT
 endif
 
-Const activeAbilityInterval  = READINI("SETTING", "activeAbilityInterval")   //Active All Ability実行間隔
-Const initCooldownInterval   = READINI("SETTING", "initCooldownInterval")    //リセット後にCooldownをアクティブにする間隔
-Const activeCooldownInterval = READINI("SETTING", "activeCooldownInterval")  //Cooldown実行間隔
 Const initResetInterval      = READINI("SETTING", "initResetInterval")       //リセット実行間隔初期値
 
 //ブロッククリック開始座標
@@ -57,18 +48,9 @@ Const timeWarpConfirmPositon_y = READINI("SETTING", "timeWarpConfirmPositon_y")
 Const clickPistolPosiotn_x = READINI("SETTING", "clickPistolPosiotn_x")
 Const clickPistolPosiotn_y = READINI("SETTING", "clickPistolPosiotn_y")
 
-//---------------------------------------------------------------------
-// スクリプト実行方法の確認(デフォルト：アクティブ実行)
-//---------------------------------------------------------------------
-Dim executeType = SLCTBOX(SLCT_RDO, 10, "実行タイプを選んでください", "アクティブ", "バックグラウンド")
-
-ifb executeType = 0
-  MsgBox("タイムアウトしました")
-  EXITEXIT
-elseif executeType = -1
-  MsgBox("処理を中止しました")
-  EXITEXIT
-endif
+// Idle Mode ボタン座標
+Const clickIdleModePosiotn_x = READINI("SETTING", "clickIdleModePosiotn_x")
+Const clickIdleModePosiotn_y = READINI("SETTING", "clickIdleModePosiotn_y")
 
 //---------------------------------------------------------------------
 // 画面ID、ハンドルの取得
@@ -86,19 +68,15 @@ ifb handle < 0
   EXITEXIT
 endif
 
-PRINT "画面ID = " + windowId
-PRINT "Unity.WebPlayerハンドル = " + handle
+PRINT "一時停止：Alt+F1  停止：Alt+F2"
+
 
 //---------------------------------------------------------------------
 // クリック位置をクライアント座標(UnityWebPlayer内の座標)にする
 //---------------------------------------------------------------------
-ifb executeType = SLCT_1
-  MOUSEORG(handle, MORG_CLIENT)
-  //ウインドウをアクティブにする
-  CTRLWIN(windowId, ACTIVATE)
-elseif executeType = SLCT_2
-  MOUSEORG(handle, MORG_DIRECT)
-endif
+MOUSEORG(handle, MORG_CLIENT)
+//ウインドウをアクティブにする
+CTRLWIN(windowId, ACTIVATE)
 
 //---------------------------------------------------------------------
 // 変数初期化
@@ -106,8 +84,6 @@ endif
 resetTime        = customizedGetTime()
 nextCaptureTime  = resetTime
 captureCount     = 0
-lastActiveTime   = resetTime
-lastCooldownTime = resetTime
 resetInterval    = initResetInterval
 
 //開始メッセージをログに出力
@@ -116,7 +92,7 @@ printDateAndMessage("start script")
 //---------------------------------------------------------------------
 // リセットしてからスクリプトを実行するか確認(デフォルト：リセットなし)
 //---------------------------------------------------------------------
-Dim initialResetFlag = SLCTBOX(SLCT_RDO, 10, "スクリプト実行前にリセットしますか？", "NO(リセットなし)", "YES")
+Dim initialResetFlag = SLCTBOX(SLCT_RDO, 10, "スクリプト実行前にリセットしますか？", "NO", "YES", "NO(定期リセットなし)")
 //リセットなし
 ifb initialResetFlag = SLCT_1
   customizedGetTime(initResetInterval/60/60/24)
@@ -132,8 +108,6 @@ elseif initialResetFlag = SLCT_2
   printMessageAndDate("auto reset →")
 
   resetTime = customizedGetTime()
-  lastActiveTime = resetTime
-  lastCooldownTime = resetTime
   nextCaptureTime  = resetTime
 endif
 
@@ -144,32 +118,45 @@ endif
 ifb initialResetFlag = SLCT_2
   Dim captureFlag = SLCTBOX(SLCT_RDO, 10, "定期的にスクリーンショットを撮影しますか？", "NO(撮影しない)", "YES")
 
+  SLEEP(1)
+
   ifb captureFlag = SLCT_2
     THREAD capture()
   endif
 endif
 
+
 //---------------------------------------------------------------------
 // スクリプト本体
 //---------------------------------------------------------------------
 WHILE TRUE
+  
+  // Idle mode が無効になっていたらアクティブにする
+  ifb PEEKCOLOR(clickIdleModePosiotn_x, clickIdleModePosiotn_y, COL_RGB) = 26879 OR PEEKCOLOR(clickIdleModePosiotn_x, clickIdleModePosiotn_y, COL_RGB) = 4165119
+    BTN(LEFT,CLICK,clickIdleModePosiotn_x,clickIdleModePosiotn_y)
+  endif 
+
+  // Abilityをすべてアクティブにする
+  KBD(VK_SPACE,CLICK)
+
+  // Cooldownが使用可能になったら実行する
+  ifb PEEKCOLOR(955, 355, COL_RGB) = 26623
+    sleep(1)
+    KBD(VK_0,CLICK)
+  endif
+  
+  // Dimension Shiftをアクティブにする
+  ifb PEEKCOLOR(815, 355, COL_RGB) = 26623
+    KBD(VK_7,CLICK)
+  endif
 
   //-----------------------------------------------------------------
-  // ブロッククリック ※バックグラウンドではマウスポインタが動かない
+  // ブロッククリック
   //-----------------------------------------------------------------
-  Dim i, j
-  Dim coordinate_x, coordinate_y
-
-  FOR i = 1 TO 10
-    FOR j = 1 TO 10
-      coordinate_x = clickStartPosition_x + increment_x * (i - 1)
-      coordinate_y = clickStartPosition_y + increment_y * (j - 1)
-      BTN(LEFT,CLICK,coordinate_x,coordinate_y)
-    NEXT
-  NEXT
+  clickAndMove()
 
   //----------------------------------------------------
-  // Auto Upgrade
+  // アップグレード自動購入
   //----------------------------------------------------
   KBD(VK_A,CLICK)                 // PULSE PISTOL
   KBD(VK_S,CLICK)                 // FLAK CANNON
@@ -178,42 +165,11 @@ WHILE TRUE
   KBD(VK_G,CLICK)                 // PARTICLE BALL
 
   //----------------------------------------------------
-  // Active All Ability
-  //----------------------------------------------------
-  //一定時間でAbilityをアクティブにする
-  ifb (customizedGetTime() - lastActiveTime) >= activeAbilityInterval
-    KBD(VK_SPACE,CLICK)
-
-    lastActiveTime = customizedGetTime()
-
-  endif
-
-  //----------------------------------------------------
-  // Active Cooldown
-  //----------------------------------------------------
-  //スクリプト起動(またはリセット)して一定時間後にCooldownをアクティブにする(1回のみ)
-  ifb (lastCooldownTime = resetTime) AND ((customizedGetTime() - resetTime) > initCooldownInterval)
-    KBD(VK_0,CLICK)
-
-    lastCooldownTime = customizedGetTime()
-
-  endif
-
-  //一定間隔でCooldownをアクティブにする
-  ifb customizedGetTime() >= (lastCooldownTime + activeCooldownInterval)
-    KBD(VK_0,CLICK)
-
-    lastCooldownTime = customizedGetTime()
-
-  endif
-
-  //----------------------------------------------------
-  // リセット＋初期処理
-  // リセット延長できるようにした(放置してる場合は自動でリセット)
+  // リセット＋初期処理(放置してる場合は自動でリセット)
   //----------------------------------------------------
   //スクリプト起動(またはリセット)して一定時間後にリセット
-  ifb (customizedGetTime() - resetTime) >= resetInterval
-    Dim resetConfirm = SLCTBOX(SLCT_RDO, 10, "リセットしますか？", "YES", "NO")
+  ifb (!(initialResetFlag = SLCT_3) AND customizedGetTime() - resetTime) >= resetInterval
+    Dim resetConfirm = SLCTBOX(SLCT_RDO, 10, "リセットしますか？", "YES", "NO(10分後)", "NO(30分後)", "NO(60分後)")
     Dim resetMessage = "reset cancel"
 
     //タイムアウトかYESの場合リセット実施
@@ -228,12 +184,15 @@ WHILE TRUE
 
       //スクリーンショット関連も初期化
       captureCount = 0
-      //nextCaptureTime = resetTime
-
-    else
-      //10分後に再度リセット確認
+    elseif resetConfirm = SLCT_2
+      // 10分後
       resetInterval = 600
-
+    elseif resetConfirm = SLCT_3
+      // 30分後
+      resetInterval = 1800
+    elseif resetConfirm = SLCT_4
+      // 60分後
+      resetInterval = 3600
     endif
 
     printDateAndMessage(resetMessage)
@@ -243,8 +202,6 @@ WHILE TRUE
     printMessageAndDate("auto reset →")
 
     resetTime = customizedGetTime()
-    lastActiveTime = resetTime
-    lastCooldownTime = resetTime
     nextCaptureTime = resetTime
 
   endif
@@ -304,6 +261,8 @@ PROCEDURE resetAndInitialProcess()
   //「YES」をクリック
   BTN(LEFT,CLICK,timeWarpConfirmPositon_x,timeWarpConfirmPositon_y,300)
 
+  sleep(2)
+
   //「PISTOL LEVEL UP」をクリック
   FOR i = 1 TO 13
     BTN(LEFT,CLICK,clickPistolPosiotn_x,clickPistolPosiotn_y,300)
@@ -313,9 +272,6 @@ PROCEDURE resetAndInitialProcess()
   FOR i = 1 TO 11
     BTN(LEFT,CLICK,timeWarpPosition_x,timeWarpPosition_y,300)
   NEXT
-
-  //「Dimension Shift」を アクティブ に
-  KBD(VK_7,CLICK)
 
 FEND
 
@@ -348,5 +304,22 @@ PROCEDURE capture()
 
     endif
   WEND
+
+FEND
+
+//---------------------------------------------------------------------
+// クリック処理
+//---------------------------------------------------------------------
+PROCEDURE clickAndMove()
+  Dim i, j
+  Dim coordinate_x, coordinate_y
+
+  FOR i = 1 TO 10
+    FOR j = 1 TO 10
+      coordinate_x = clickStartPosition_x + increment_x * (i - 1)
+      coordinate_y = clickStartPosition_y + increment_y * (j - 1)
+      BTN(LEFT,CLICK,coordinate_x,coordinate_y)
+    NEXT
+  NEXT
 
 FEND
