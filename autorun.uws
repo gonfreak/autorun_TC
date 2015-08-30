@@ -168,7 +168,7 @@ WHILE TRUE
   // リセット＋初期処理(放置してる場合は自動でリセット)
   //----------------------------------------------------
   //スクリプト起動(またはリセット)して一定時間後にリセット
-  ifb (!(initialResetFlag = SLCT_3) AND customizedGetTime() - resetTime) >= resetInterval
+  ifb (!(initialResetFlag = SLCT_3) AND customizedGetTime() - resetTime >= resetInterval)
     Dim resetConfirm = SLCTBOX(SLCT_RDO, 10, "リセットしますか？", "YES", "NO(10分後)", "NO(30分後)", "NO(60分後)")
     Dim resetMessage = "reset cancel"
 
