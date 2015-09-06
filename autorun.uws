@@ -52,6 +52,9 @@ Const clickPistolPosiotn_y = READINI("SETTING", "clickPistolPosiotn_y")
 Const clickIdleModePosiotn_x = READINI("SETTING", "clickIdleModePosiotn_x")
 Const clickIdleModePosiotn_y = READINI("SETTING", "clickIdleModePosiotn_y")
 
+// Cooldown 実行猶予秒数
+Const clickCooldownDelay = READINI("SETTING", "clickCooldownDelay")
+
 //---------------------------------------------------------------------
 // 画面ID、ハンドルの取得
 //---------------------------------------------------------------------
@@ -139,13 +142,12 @@ WHILE TRUE
   // Abilityをすべてアクティブにする
   KBD(VK_SPACE,CLICK)
 
-  // Cooldownが使用可能になったら60秒後にアクティブにする
-  // ※ アビリティ本来のクールダウンが無駄にならないように
+  // Cooldownが使用可能になってから、設定した秒数後に実行する
   ifb PEEKCOLOR(955, 355, COL_RGB) = 26623
     ifb coolDownCheck = 0
       coolDownCheck = customizedGetTime()
     else
-      ifb customizedGetTime() > coolDownCheck + 60
+      ifb customizedGetTime() > coolDownCheck + clickCooldownDelay
         KBD(VK_0,CLICK)
         coolDownCheck = 0
       endif
