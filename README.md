@@ -4,6 +4,7 @@ TimeClickersの自動実行スクリプトです
 ## 概要
 TimeCubeを効率的に集めたい人向けのツールです
 UWSCのスクリプトなのでWindows環境で動作します
+( for TimeClickers 1.1.0, FireFox 40, UWSC 5.1.1 )
 
 ## 主な機能
 * アップグレードの自動購入
