@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------
-// Time Clickers 自動実行スクリプト
+// Time Clickers(1.1.0) 自動実行スクリプト
 // ( UWSC 5.1.1 Firefox 39.0 にて動作確認 )
 //---------------------------------------------------------------------
 
@@ -125,7 +125,7 @@ ifb initialResetFlag = SLCT_2
   endif
 endif
 
-
+Dim coolDownCheck = 0
 //---------------------------------------------------------------------
 // スクリプト本体
 //---------------------------------------------------------------------
@@ -139,10 +139,17 @@ WHILE TRUE
   // Abilityをすべてアクティブにする
   KBD(VK_SPACE,CLICK)
 
-  // Cooldownが使用可能になったら実行する
+  // Cooldownが使用可能になったら60秒後にアクティブにする
+  // ※ アビリティ本来のクールダウンが無駄にならないように
   ifb PEEKCOLOR(955, 355, COL_RGB) = 26623
-    sleep(1)
-    KBD(VK_0,CLICK)
+    ifb coolDownCheck = 0
+      coolDownCheck = customizedGetTime()
+    else
+      ifb customizedGetTime() > coolDownCheck + 60
+        KBD(VK_0,CLICK)
+        coolDownCheck = 0
+      endif
+    endif
   endif
   
   // Dimension Shiftをアクティブにする
@@ -184,6 +191,8 @@ WHILE TRUE
 
       //スクリーンショット関連も初期化
       captureCount = 0
+      
+      coolDownCheck = 0
     elseif resetConfirm = SLCT_2
       // 10分後
       resetInterval = 600
