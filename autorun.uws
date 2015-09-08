@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------
-// Time Clickers(1.1.0) 自動実行スクリプト
-// ( UWSC 5.1.1 Firefox 39.0 にて動作確認 )
+// Time Clickers(1.2.0) 自動実行スクリプト
+// ( UWSC 5.1.1 Firefox 40.0 にて動作確認 )
 //---------------------------------------------------------------------
 
 Option Explicit
@@ -51,6 +51,10 @@ Const clickPistolPosiotn_y = READINI("SETTING", "clickPistolPosiotn_y")
 // Idle Mode ボタン座標
 Const clickIdleModePosiotn_x = READINI("SETTING", "clickIdleModePosiotn_x")
 Const clickIdleModePosiotn_y = READINI("SETTING", "clickIdleModePosiotn_y")
+
+// Idle Mode (launcher) ボタン座標
+Const clickLauncherIdleModePosiotn_x = READINI("SETTING", "clickLauncherIdleModePosiotn_x")
+Const clickLauncherIdleModePosiotn_y = READINI("SETTING", "clickLauncherIdleModePosiotn_y")
 
 // Cooldown 実行猶予秒数
 Const clickCooldownDelay = READINI("SETTING", "clickCooldownDelay")
@@ -133,11 +137,16 @@ Dim coolDownCheck = 0
 // スクリプト本体
 //---------------------------------------------------------------------
 WHILE TRUE
-  
+
   // Idle mode が無効になっていたらアクティブにする
-  ifb PEEKCOLOR(clickIdleModePosiotn_x, clickIdleModePosiotn_y, COL_RGB) = 26879 OR PEEKCOLOR(clickIdleModePosiotn_x, clickIdleModePosiotn_y, COL_RGB) = 4165119
+  ifb !(PEEKCOLOR(clickIdleModePosiotn_x, clickIdleModePosiotn_y, COL_RGB) = 16743424)
     BTN(LEFT,CLICK,clickIdleModePosiotn_x,clickIdleModePosiotn_y)
   endif 
+
+  // Idle mode (launcher) が無効になっていたらアクティブにする
+  ifb !(PEEKCOLOR(clickLauncherIdleModePosiotn_x, clickLauncherIdleModePosiotn_y, COL_RGB) = 16743424)
+    BTN(LEFT,CLICK,clickLauncherIdleModePosiotn_x,clickLauncherIdleModePosiotn_y)
+  endif
 
   // Abilityをすべてアクティブにする
   KBD(VK_SPACE,CLICK)
@@ -275,14 +284,22 @@ PROCEDURE resetAndInitialProcess()
   sleep(2)
 
   //「PISTOL LEVEL UP」をクリック
-  FOR i = 1 TO 13
+//  FOR i = 1 TO 13
+//    BTN(LEFT,CLICK,clickPistolPosiotn_x,clickPistolPosiotn_y,300)
+//  NEXT
+  WHILE !(PEEKCOLOR(915, 205, COL_RGB) = 5570304) AND !(PEEKCOLOR(915, 205, COL_RGB) = 5558550)
     BTN(LEFT,CLICK,clickPistolPosiotn_x,clickPistolPosiotn_y,300)
-  NEXT
+    sleep(0.5)
+  WEND
 
   //「UNLOCK ACTIVE ABILITIES」をクリック
-  FOR i = 1 TO 11
+//  FOR i = 1 TO 11
+//    BTN(LEFT,CLICK,timeWarpPosition_x,timeWarpPosition_y,300)
+//  NEXT
+  WHILE !(PEEKCOLOR(915, 285, COL_RGB) = 671744)
     BTN(LEFT,CLICK,timeWarpPosition_x,timeWarpPosition_y,300)
-  NEXT
+    sleep(0.5)
+  WEND
 
 FEND
 
