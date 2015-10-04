@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------
-// Time Clickers(1.2.0) 自動実行スクリプト
-// ( UWSC 5.1.1 Firefox 40.0 にて動作確認 )
+// Time Clickers(1.2.1) 自動実行スクリプト
+// ( UWSC 5.1.2 Firefox 40.0 にて動作確認 )
 //---------------------------------------------------------------------
 
 Option Explicit
@@ -101,7 +101,7 @@ printDateAndMessage("start script")
 //---------------------------------------------------------------------
 Dim initialResetFlag = SLCTBOX(SLCT_RDO, 5, "スクリプト実行前にリセットしますか？", "NO", "YES", "NO(定期リセットなし)")
 //リセットなし
-ifb initialResetFlag = SLCT_1
+ifb initialResetFlag = SLCT_1 OR initialResetFlag = 0
   customizedGetTime(initResetInterval/60/60/24)
   printMessageAndDate("auto reset →")
 //リセットあり
@@ -133,19 +133,25 @@ ifb initialResetFlag = SLCT_2
 endif
 
 Dim coolDownCheck = 0
+Dim idleModeCheck = 0
 //---------------------------------------------------------------------
 // スクリプト本体
 //---------------------------------------------------------------------
 WHILE TRUE
 
-  // Idle mode が無効になっていたらアクティブにする
-  ifb !(PEEKCOLOR(clickIdleModePosiotn_x, clickIdleModePosiotn_y, COL_RGB) = 16743424)
-    BTN(LEFT,CLICK,clickIdleModePosiotn_x,clickIdleModePosiotn_y,500)
-  endif 
+  // 起動(リセット)して15秒後に Idle Mode を一度だけアクティブにする
+  ifb idleModeCheck = 0 AND customizedGetTime() - resetTime >= 15
+    // Idle mode が無効になっていたらアクティブにする
+    ifb !(PEEKCOLOR(clickIdleModePosiotn_x, clickIdleModePosiotn_y, COL_RGB) = 16743424)
+      BTN(LEFT,CLICK,clickIdleModePosiotn_x,clickIdleModePosiotn_y,500)
+    endif 
 
-  // Idle mode (launcher) が無効になっていたらアクティブにする
-  ifb !(PEEKCOLOR(clickLauncherIdleModePosiotn_x, clickLauncherIdleModePosiotn_y, COL_RGB) = 16743424)
-    BTN(LEFT,CLICK,clickLauncherIdleModePosiotn_x,clickLauncherIdleModePosiotn_y,500)
+    // Idle mode (launcher) が無効になっていたらアクティブにする
+    ifb !(PEEKCOLOR(clickLauncherIdleModePosiotn_x, clickLauncherIdleModePosiotn_y, COL_RGB) = 16743424)
+      BTN(LEFT,CLICK,clickLauncherIdleModePosiotn_x,clickLauncherIdleModePosiotn_y,500)
+    endif
+    
+    idleModeCheck = 1
   endif
 
   // Abilityをすべてアクティブにする
@@ -171,16 +177,16 @@ WHILE TRUE
   //-----------------------------------------------------------------
   // ブロッククリック
   //-----------------------------------------------------------------
-  clickAndMove()
+  //clickAndMove()
 
   //----------------------------------------------------
   // アップグレード自動購入
   //----------------------------------------------------
-  KBD(VK_A,CLICK)                 // PULSE PISTOL
-  KBD(VK_S,CLICK)                 // FLAK CANNON
-  KBD(VK_D,CLICK)                 // SOREAD RIFLE
-  KBD(VK_F,CLICK)                 // POCKET LAUNCHER
-  KBD(VK_G,CLICK)                 // PARTICLE BALL
+  KBD(VK_A,CLICK,500)                 // PULSE PISTOL
+  KBD(VK_S,CLICK,500)                 // FLAK CANNON
+  KBD(VK_D,CLICK,500)                 // SOREAD RIFLE
+  KBD(VK_F,CLICK,500)                 // POCKET LAUNCHER
+  KBD(VK_G,CLICK,500)                 // PARTICLE BALL
 
   //----------------------------------------------------
   // リセット＋初期処理(放置してる場合は自動でリセット)
@@ -204,6 +210,7 @@ WHILE TRUE
       captureCount = 0
       
       coolDownCheck = 0
+      idleModeCheck = 0
     elseif resetConfirm = SLCT_2
       // 10分後
       resetInterval = 600
@@ -288,17 +295,31 @@ PROCEDURE resetAndInitialProcess()
   BTN(LEFT,CLICK,timeWarpConfirmPositon_x,timeWarpConfirmPositon_y,1000)
 
   sleep(1)
+  
+  //「YES」がクリックできていなかったら再度クリック
+  ifb PEEKCOLOR(timeWarpConfirmPositon_x, timeWarpConfirmPositon_y, COL_RGB) = 26879
+    BTN(LEFT,CLICK,timeWarpConfirmPositon_x,timeWarpConfirmPositon_y,1000)
+    sleep(1)
+  endif
+  
 
   //「PISTOL LEVEL UP」をクリック
   WHILE !(PEEKCOLOR(915, 185, COL_RGB) = 4444952)
+    // WEAPON CUBE ボタンを押してしまったらループを抜ける
+    ifb PEEKCOLOR(850, 265, COL_RGB) = 3688543
+      BTN(LEFT,CLICK, 850, 265, 500)
+      sleep(1)
+      break
+    endif
+    
     BTN(LEFT,CLICK,clickPistolPosiotn_x,clickPistolPosiotn_y,500)
-    sleep(1)
+    sleep(0.5)
   WEND
 
   //「UNLOCK ACTIVE ABILITIES」をクリック
   WHILE !(PEEKCOLOR(915, 265, COL_RGB) = 671744)
     BTN(LEFT,CLICK,timeWarpPosition_x,timeWarpPosition_y,500)
-    sleep(1)
+    sleep(0.5)
   WEND
 
 FEND
@@ -312,7 +333,7 @@ PROCEDURE capture()
   Const captureInterval = 300
 
   //保存先のフォルダが存在しない場合は終了
-  if FOPEN(saveDirectory, F_EXISTS) = FALSE
+  ifb FOPEN(saveDirectory, F_EXISTS) = FALSE
     MSGBOX(saveDirectory + "が存在しません")
     EXITEXIT
   endif

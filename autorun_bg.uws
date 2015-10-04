@@ -1,0 +1,138 @@
+//---------------------------------------------------------------------
+// Time Clickers(1.2.1) 自動実行スクリプト(バックグラウンド)
+// ( UWSC 5.1.2 Firefox 40.0 にて動作確認 )
+// バックグラウンドでクリックは動作が安定しないのでキーボード入力のみ
+//---------------------------------------------------------------------
+
+Option Explicit
+
+//---------------------------------------------------------------------
+// 変数・定数宣言
+//---------------------------------------------------------------------
+
+Public TIME_YY          //年 4桁
+Public TIME_MM          //月 01 - 12
+Public TIME_DD          //日 01 - 31
+Public TIME_HH          //時 00 - 23
+Public TIME_NN          //分 00 - 59
+Public TIME_SS          //秒 00 - 59
+Public GETTIME_sec      //GETTIME()の戻り値
+
+// Cooldown 実行猶予秒数
+Const clickCooldownDelay = READINI("SETTING", "clickCooldownDelay")
+
+//---------------------------------------------------------------------
+// 画面ID、ハンドルの取得
+//---------------------------------------------------------------------
+Dim windowId = GETID("Time Clickers")
+Dim handle = GETCTLHND(windowId, "Unity.WebPlayer")
+
+ifb windowId < 0
+  MsgBox("対象のウインドウが起動していません")
+  EXITEXIT
+endif
+
+ifb handle < 0
+  MsgBox("Unity.WebPlayerがありません")
+  EXITEXIT
+endif
+
+PRINT "一時停止：Alt+F1  停止：Alt+F2"
+
+
+//---------------------------------------------------------------------
+// クリック位置をクライアント座標(UnityWebPlayer内の座標)にする
+//---------------------------------------------------------------------
+MOUSEORG(handle, MORG_DIRECT, MORG_BACK)
+//ウインドウをアクティブにする
+CTRLWIN(windowId, ACTIVATE)
+
+//---------------------------------------------------------------------
+// 変数初期化
+//---------------------------------------------------------------------
+
+
+//開始メッセージをログに出力
+printDateAndMessage("start script")
+
+Dim coolDownCheck = 0
+Dim idleModeCheck = 0
+//---------------------------------------------------------------------
+// スクリプト本体
+//---------------------------------------------------------------------
+WHILE TRUE
+
+  // クリックイベントが無いとキーボード入力を受け付けないようなので追加
+  BTN(LEFT,CLICK,400,555)
+
+  // Abilityをすべてアクティブにする
+  KBD(VK_SPACE,CLICK)
+
+  // Cooldownが使用可能になってから、設定した秒数後に実行する
+  ifb PEEKCOLOR(955, 355, COL_RGB) = 26623
+    ifb coolDownCheck = 0
+      coolDownCheck = customizedGetTime()
+    else
+      ifb customizedGetTime() > coolDownCheck + clickCooldownDelay
+        KBD(VK_0,CLICK)
+        coolDownCheck = 0
+      endif
+    endif
+  endif
+  
+  // Dimension Shiftをアクティブにする
+  ifb PEEKCOLOR(815, 355, COL_RGB) = 26623
+    KBD(VK_7,CLICK)
+  endif
+
+  //----------------------------------------------------
+  // アップグレード自動購入
+  //----------------------------------------------------
+  KBD(VK_A,CLICK,500)                 // PULSE PISTOL
+  KBD(VK_S,CLICK,500)                 // FLAK CANNON
+  KBD(VK_D,CLICK,500)                 // SOREAD RIFLE
+  KBD(VK_F,CLICK,500)                 // POCKET LAUNCHER
+  KBD(VK_G,CLICK,500)                 // PARTICLE BALL
+
+WEND
+
+//---------------------------------------------------------------------
+// GETTIMEで取得できる値をグローバル変数に保持させる
+//---------------------------------------------------------------------
+FUNCTION customizedGetTime(adjustmentValue = EMPTY)
+
+  ifb adjustmentValue = EMPTY
+    RESULT = GETTIME()
+  else
+    RESULT = GETTIME(adjustmentValue)
+  endif
+
+  //念のためPublic変数に保持
+  GETTIME_sec = RESULT
+
+  TIME_YY = G_TIME_YY4
+  TIME_MM = G_TIME_MM2
+  TIME_DD = G_TIME_DD2
+  TIME_HH = G_TIME_HH2
+  TIME_NN = G_TIME_NN2
+  TIME_SS = G_TIME_SS2
+
+FEND
+
+//---------------------------------------------------------------------
+// 日付＋メッセージをログに出力
+//---------------------------------------------------------------------
+PROCEDURE printDateAndMessage(message)
+
+  PRINT "" + TIME_YY + "/" + TIME_MM + "/" + TIME_DD + " " + TIME_HH + ":" + TIME_NN + ":" + TIME_SS + " " + message
+
+FEND
+
+//---------------------------------------------------------------------
+// メッセージ＋日付をログに出力
+//---------------------------------------------------------------------
+PROCEDURE printMessageAndDate(message)
+
+  PRINT message + " " + TIME_YY + "/" + TIME_MM + "/" + TIME_DD + " " + TIME_HH + ":" + TIME_NN + ":" + TIME_SS
+
+FEND
