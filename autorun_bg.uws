@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------
-// Time Clickers(1.2.1) 自動実行スクリプト(バックグラウンド)
-// ( UWSC 5.1.2 Firefox 40.0 にて動作確認 )
+// Time Clickers(1.3.2) 自動実行スクリプト(バックグラウンド)
+// ( UWSC 5.1.2 Firefox 41.0 にて動作確認 )
 // バックグラウンドでクリックは動作が安定しないのでキーボード入力のみ
 //---------------------------------------------------------------------
 
@@ -9,7 +9,6 @@ Option Explicit
 //---------------------------------------------------------------------
 // 変数・定数宣言
 //---------------------------------------------------------------------
-
 Public TIME_YY          //年 4桁
 Public TIME_MM          //月 01 - 12
 Public TIME_DD          //日 01 - 31
@@ -41,7 +40,7 @@ PRINT "一時停止：Alt+F1  停止：Alt+F2"
 
 
 //---------------------------------------------------------------------
-// クリック位置をクライアント座標(UnityWebPlayer内の座標)にする
+// バックグラウンド処理モードに設定
 //---------------------------------------------------------------------
 MOUSEORG(handle, MORG_DIRECT, MORG_BACK)
 //ウインドウをアクティブにする
@@ -51,19 +50,32 @@ CTRLWIN(windowId, ACTIVATE)
 // 変数初期化
 //---------------------------------------------------------------------
 
-
+customizedGetTime()
 //開始メッセージをログに出力
 printDateAndMessage("start script")
 
 Dim coolDownCheck = 0
 Dim idleModeCheck = 0
+Dim resetTime     = customizedGetTime()
 //---------------------------------------------------------------------
 // スクリプト本体
 //---------------------------------------------------------------------
 WHILE TRUE
 
-  // クリックイベントが無いとキーボード入力を受け付けないようなので追加
+  // バックグラウンド処理維持のための処理
   BTN(LEFT,CLICK,400,555)
+
+  // 起動して15秒後に Idle Mode を一度だけアクティブにする
+  ifb idleModeCheck = 0 AND customizedGetTime() - resetTime >= 15
+    // Idle Mode が無効になっていたらアクティブにする
+    ifb !(PEEKCOLOR(695, 555, COL_RGB) = 16743424)
+      KBD(VK_Q,CLICK)
+      KBD(VK_W,CLICK)
+      KBD(VK_E,CLICK)
+    endif
+    
+    idleModeCheck = 1
+  endif
 
   // Abilityをすべてアクティブにする
   KBD(VK_SPACE,CLICK)
@@ -88,11 +100,11 @@ WHILE TRUE
   //----------------------------------------------------
   // アップグレード自動購入
   //----------------------------------------------------
-  KBD(VK_A,CLICK,500)                 // PULSE PISTOL
-  KBD(VK_S,CLICK,500)                 // FLAK CANNON
-  KBD(VK_D,CLICK,500)                 // SOREAD RIFLE
-  KBD(VK_F,CLICK,500)                 // POCKET LAUNCHER
-  KBD(VK_G,CLICK,500)                 // PARTICLE BALL
+  KBD(VK_A,CLICK,300)                 // PULSE PISTOL
+  KBD(VK_S,CLICK,300)                 // FLAK CANNON
+  KBD(VK_D,CLICK,300)                 // SOREAD RIFLE
+  KBD(VK_F,CLICK,300)                 // POCKET LAUNCHER
+  KBD(VK_G,CLICK,300)                 // PARTICLE BALL
 
 WEND
 

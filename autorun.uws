@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------
-// Time Clickers(1.2.1) 自動実行スクリプト
-// ( UWSC 5.1.2 Firefox 40.0 にて動作確認 )
+// Time Clickers(1.3.2) 自動実行スクリプト
+// ( UWSC 5.1.2 Firefox 41.0 にて動作確認 )
 //---------------------------------------------------------------------
 
 Option Explicit
@@ -8,7 +8,6 @@ Option Explicit
 //---------------------------------------------------------------------
 // 変数・定数宣言
 //---------------------------------------------------------------------
-
 Public TIME_YY          //年 4桁
 Public TIME_MM          //月 01 - 12
 Public TIME_DD          //日 01 - 31
@@ -28,36 +27,25 @@ if FOPEN(GET_CUR_DIR + "\" + "autorun.ini", F_EXISTS) = FALSE
   EXITEXIT
 endif
 
-Const initResetInterval      = READINI("SETTING", "initResetInterval")       //リセット実行間隔初期値
+//リセット実行間隔初期値
+Const initResetInterval        = READINI("SETTING", "initResetInterval")
 
 //ブロッククリック開始座標
-Const clickStartPosition_x = READINI("SETTING", "clickStartPosition_x")
-Const clickStartPosition_y = READINI("SETTING", "clickStartPosition_y")
-Const increment_x = READINI("SETTING", "increment_x")                        //X座標増分
-Const increment_y = READINI("SETTING", "increment_y")                        //Y座標増分
+Const clickStartPosition_x     = READINI("SETTING", "clickStartPosition_x")
+Const clickStartPosition_y     = READINI("SETTING", "clickStartPosition_y")
+Const increment_x              = READINI("SETTING", "increment_x")             //X座標増分
+Const increment_y              = READINI("SETTING", "increment_y")             //Y座標増分
 
 //TIME WARPボタン(ACTIME ABILITIES UNLOCKボタン)の座標
-Const timeWarpPosition_x = READINI("SETTING", "timeWarpPosition_x")
-Const timeWarpPosition_y = READINI("SETTING", "timeWarpPosition_y")
+Const timeWarpPosition_x       = READINI("SETTING", "timeWarpPosition_x")
+Const timeWarpPosition_y       = READINI("SETTING", "timeWarpPosition_y")
 
 // リセット実施YESボタン座標
 Const timeWarpConfirmPositon_x = READINI("SETTING", "timeWarpConfirmPositon_x")
 Const timeWarpConfirmPositon_y = READINI("SETTING", "timeWarpConfirmPositon_y")
 
-// CLICK PISTOL BUYボタン座標
-Const clickPistolPosiotn_x = READINI("SETTING", "clickPistolPosiotn_x")
-Const clickPistolPosiotn_y = READINI("SETTING", "clickPistolPosiotn_y")
-
-// Idle Mode ボタン座標
-Const clickIdleModePosiotn_x = READINI("SETTING", "clickIdleModePosiotn_x")
-Const clickIdleModePosiotn_y = READINI("SETTING", "clickIdleModePosiotn_y")
-
-// Idle Mode (launcher) ボタン座標
-Const clickLauncherIdleModePosiotn_x = READINI("SETTING", "clickLauncherIdleModePosiotn_x")
-Const clickLauncherIdleModePosiotn_y = READINI("SETTING", "clickLauncherIdleModePosiotn_y")
-
 // Cooldown 実行猶予秒数
-Const clickCooldownDelay = READINI("SETTING", "clickCooldownDelay")
+Const clickCooldownDelay       = READINI("SETTING", "clickCooldownDelay")
 
 //---------------------------------------------------------------------
 // 画面ID、ハンドルの取得
@@ -140,15 +128,12 @@ Dim idleModeCheck = 0
 WHILE TRUE
 
   // 起動(リセット)して15秒後に Idle Mode を一度だけアクティブにする
-  ifb idleModeCheck = 0 AND customizedGetTime() - resetTime >= 15
-    // Idle mode が無効になっていたらアクティブにする
-    ifb !(PEEKCOLOR(clickIdleModePosiotn_x, clickIdleModePosiotn_y, COL_RGB) = 16743424)
-      BTN(LEFT,CLICK,clickIdleModePosiotn_x,clickIdleModePosiotn_y,500)
-    endif 
-
-    // Idle mode (launcher) が無効になっていたらアクティブにする
-    ifb !(PEEKCOLOR(clickLauncherIdleModePosiotn_x, clickLauncherIdleModePosiotn_y, COL_RGB) = 16743424)
-      BTN(LEFT,CLICK,clickLauncherIdleModePosiotn_x,clickLauncherIdleModePosiotn_y,500)
+  ifb idleModeCheck = 0 AND customizedGetTime() - resetTime >= 15    
+    // Idle Mode が無効になっていたらアクティブにする
+    ifb !(PEEKCOLOR(695, 555, COL_RGB) = 16743424)
+      KBD(VK_Q,CLICK)
+      KBD(VK_W,CLICK)
+      KBD(VK_E,CLICK)
     endif
     
     idleModeCheck = 1
@@ -177,16 +162,16 @@ WHILE TRUE
   //-----------------------------------------------------------------
   // ブロッククリック
   //-----------------------------------------------------------------
-  //clickAndMove()
+  clickAndMove()
 
   //----------------------------------------------------
   // アップグレード自動購入
   //----------------------------------------------------
-  KBD(VK_A,CLICK,500)                 // PULSE PISTOL
-  KBD(VK_S,CLICK,500)                 // FLAK CANNON
-  KBD(VK_D,CLICK,500)                 // SOREAD RIFLE
-  KBD(VK_F,CLICK,500)                 // POCKET LAUNCHER
-  KBD(VK_G,CLICK,500)                 // PARTICLE BALL
+  KBD(VK_A,CLICK)                 // PULSE PISTOL
+  KBD(VK_S,CLICK)                 // FLAK CANNON
+  KBD(VK_D,CLICK)                 // SOREAD RIFLE
+  KBD(VK_F,CLICK)                 // POCKET LAUNCHER
+  KBD(VK_G,CLICK)                 // PARTICLE BALL
 
   //----------------------------------------------------
   // リセット＋初期処理(放置してる場合は自動でリセット)
@@ -281,8 +266,6 @@ FEND
 //---------------------------------------------------------------------
 PROCEDURE resetAndInitialProcess()
 
-  Dim i, j
-
   // クライアント領域内の座標指定にする
   MOUSEORG(GETCTLHND(GETID("Time Clickers"), "Unity.WebPlayer"), MORG_CLIENT)
 
@@ -301,25 +284,15 @@ PROCEDURE resetAndInitialProcess()
     BTN(LEFT,CLICK,timeWarpConfirmPositon_x,timeWarpConfirmPositon_y,1000)
     sleep(1)
   endif
-  
 
   //「PISTOL LEVEL UP」をクリック
-  WHILE !(PEEKCOLOR(915, 185, COL_RGB) = 4444952)
-    // WEAPON CUBE ボタンを押してしまったらループを抜ける
-    ifb PEEKCOLOR(850, 265, COL_RGB) = 3688543
-      BTN(LEFT,CLICK, 850, 265, 500)
-      sleep(1)
-      break
-    endif
-    
-    BTN(LEFT,CLICK,clickPistolPosiotn_x,clickPistolPosiotn_y,500)
-    sleep(0.5)
+  WHILE !(PEEKCOLOR(925, 185, COL_RGB) = 4510487)
+    KBD(VK_H,CLICK)
   WEND
 
   //「UNLOCK ACTIVE ABILITIES」をクリック
-  WHILE !(PEEKCOLOR(915, 265, COL_RGB) = 671744)
-    BTN(LEFT,CLICK,timeWarpPosition_x,timeWarpPosition_y,500)
-    sleep(0.5)
+  WHILE !(PEEKCOLOR(925, 265, COL_RGB) = 671744)
+    KBD(VK_C,CLICK)
   WEND
 
 FEND

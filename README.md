@@ -4,7 +4,7 @@ TimeClickersの自動実行スクリプトです
 ## 概要
 TimeCubeを効率的に集めたい人向けのツールです  
 UWSCのスクリプトなのでWindows環境で動作します  
-( for TimeClickers 1.2.1, FireFox 40, UWSC 5.1.2 )
+( for TimeClickers 1.3.2, FireFox 41, UWSC 5.1.2 )
 
 ## 主な機能
 * アップグレードの自動購入
@@ -15,7 +15,7 @@ UWSCのスクリプトなのでWindows環境で動作します
 * 設定の Psot Screen Effects は OFF にしてください
 * リセット効率計算のための定期的なスクリーンショット撮影機能付き  
 ( 起動時のリセット選択後に選択可能 )
-* TimeCubeによる実績解除状況に応じてiniファイルの値を変更してください
+* TimeCubeによるアップグレード購入状況に応じてiniファイルの値を変更してください
 
 ## autorun_bg について
 * バックグラウンドで実行するタイプのスクリプトです
