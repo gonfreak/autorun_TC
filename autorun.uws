@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------
-// Time Clickers(1.3.2) 自動実行スクリプト
-// ( UWSC 5.1.2 Firefox 41.0 にて動作確認 )
+// Time Clickers(1.4.0) 自動実行スクリプト
+// ( UWSC 5.1.2 Firefox 41 にて動作確認 )
 //---------------------------------------------------------------------
 
 Option Explicit
@@ -87,14 +87,13 @@ printDateAndMessage("start script")
 //---------------------------------------------------------------------
 // リセットしてからスクリプトを実行するか確認(デフォルト：リセットなし)
 //---------------------------------------------------------------------
-Dim initialResetFlag = SLCTBOX(SLCT_RDO, 5, "スクリプト実行前にリセットしますか？", "NO", "YES", "NO(定期リセットなし)")
+Dim initialResetFlag = SLCTBOX(SLCT_RDO, 5, "スクリプト実行前にリセットしますか？", "NO", "YES", "YES(SS撮影)", "NO(定期リセットなし)")
 //リセットなし
 ifb initialResetFlag = SLCT_1 OR initialResetFlag = 0
   customizedGetTime(initResetInterval/60/60/24)
   printMessageAndDate("auto reset →")
 //リセットあり
-elseif initialResetFlag = SLCT_2
-
+elseif initialResetFlag = SLCT_2 OR initialResetFlag = SLCT_3
   resetAndInitialProcess()
 
   printDateAndMessage("reset")
@@ -106,18 +105,8 @@ elseif initialResetFlag = SLCT_2
   nextCaptureTime  = resetTime
 endif
 
-
-//---------------------------------------------------------------------
-// スレッド ※リセット効率のチェック時に使用する
-//---------------------------------------------------------------------
-ifb initialResetFlag = SLCT_2
-  Dim captureFlag = SLCTBOX(SLCT_RDO, 5, "定期的にスクリーンショットを撮影しますか？", "NO(撮影しない)", "YES")
-
-  SLEEP(1)
-
-  ifb captureFlag = SLCT_2
-    THREAD capture()
-  endif
+ifb initialResetFlag = SLCT_3
+  THREAD capture()
 endif
 
 Dim coolDownCheck = 0
@@ -177,7 +166,7 @@ WHILE TRUE
   // リセット＋初期処理(放置してる場合は自動でリセット)
   //----------------------------------------------------
   //スクリプト起動(またはリセット)して一定時間後にリセット
-  ifb (!(initialResetFlag = SLCT_3) AND customizedGetTime() - resetTime >= resetInterval)
+  ifb (!(initialResetFlag = SLCT_4) AND customizedGetTime() - resetTime >= resetInterval)
     Dim resetConfirm = SLCTBOX(SLCT_RDO, 5, "リセットしますか？", "YES", "NO(10分後)", "NO(30分後)", "NO(60分後)")
     Dim resetMessage = "reset cancel"
 
@@ -285,8 +274,11 @@ PROCEDURE resetAndInitialProcess()
     sleep(1)
   endif
 
+  // Start New Timeline をクリック
+  BTN(LEFT,CLICK,880,285,1000)
+
   //「PISTOL LEVEL UP」をクリック
-  WHILE !(PEEKCOLOR(925, 185, COL_RGB) = 4510487)
+  WHILE !(PEEKCOLOR(925, 185, COL_RGB) = 4378901)
     KBD(VK_H,CLICK)
   WEND
 
@@ -316,12 +308,12 @@ PROCEDURE capture()
 
       // 年月日時分秒_目安の経過時間.bmp形式で保存
       Dim file_path = saveDirectory + TIME_YY + TIME_MM + TIME_DD + TIME_HH + TIME_NN + TIME_SS + "_" + (captureInterval * captureCount)
-      captureCount = captureCount + 1
 
       SAVEIMG(file_path, GETID("Time Clickers"), , , , , , 0, 0)
 
-      printDateAndMessage("captured")
+      printDateAndMessage("captured " + "(" + (captureInterval * captureCount) + "/" + initResetInterval + ")" )
 
+      captureCount = captureCount + 1
       nextCaptureTime = nextCaptureTime + captureInterval
 
     endif
