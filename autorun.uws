@@ -109,6 +109,8 @@ ifb initialResetFlag = SLCT_3
   THREAD capture()
 endif
 
+THREAD autoLevelUpTHREAD()
+
 Dim coolDownCheck = 0
 Dim idleModeCheck = 0
 //---------------------------------------------------------------------
@@ -152,15 +154,6 @@ WHILE TRUE
   // ブロッククリック
   //-----------------------------------------------------------------
   clickAndMove()
-
-  //----------------------------------------------------
-  // アップグレード自動購入
-  //----------------------------------------------------
-  KBD(VK_A,CLICK)                 // PULSE PISTOL
-  KBD(VK_S,CLICK)                 // FLAK CANNON
-  KBD(VK_D,CLICK)                 // SOREAD RIFLE
-  KBD(VK_F,CLICK)                 // POCKET LAUNCHER
-  KBD(VK_G,CLICK)                 // PARTICLE BALL
 
   //----------------------------------------------------
   // リセット＋初期処理(放置してる場合は自動でリセット)
@@ -255,6 +248,7 @@ FEND
 //---------------------------------------------------------------------
 PROCEDURE resetAndInitialProcess()
 
+  dim i
   // クライアント領域内の座標指定にする
   MOUSEORG(GETCTLHND(GETID("Time Clickers"), "Unity.WebPlayer"), MORG_CLIENT)
 
@@ -277,11 +271,13 @@ PROCEDURE resetAndInitialProcess()
   // Start New Timeline をクリック
   BTN(LEFT,CLICK,880,285,1000)
 
-  //「PISTOL LEVEL UP」をクリック
-  WHILE !(PEEKCOLOR(925, 185, COL_RGB) = 4378901)
-    KBD(VK_H,CLICK)
-  WEND
+  sleep(5)
 
+  //「PISTOL LEVEL UP」をクリック
+  for i = 0 to 13
+    KBD(VK_H,CLICK,300)
+  next
+  
   //「UNLOCK ACTIVE ABILITIES」をクリック
   WHILE !(PEEKCOLOR(925, 265, COL_RGB) = 671744)
     KBD(VK_C,CLICK)
@@ -335,5 +331,29 @@ PROCEDURE clickAndMove()
       BTN(LEFT,CLICK,coordinate_x,coordinate_y)
     NEXT
   NEXT
+
+FEND
+
+//---------------------------------------------------------------------
+// アップグレード自動購入
+//---------------------------------------------------------------------
+PROCEDURE autoLevelUp()
+
+  KBD(VK_A,CLICK,100)    // PULSE PISTOL
+  KBD(VK_S,CLICK,100)    // FLAK CANNON
+  KBD(VK_D,CLICK,100)    // SOREAD RIFLE
+  KBD(VK_F,CLICK,100)    // POCKET LAUNCHER
+  KBD(VK_G,CLICK,100)    // PARTICLE BALL
+  
+FEND
+
+//---------------------------------------------------------------------
+// アップグレード自動購入(スレッド)
+//---------------------------------------------------------------------
+PROCEDURE autoLevelUpTHREAD()
+
+  WHILE TRUE
+    autoLevelUp()
+  WEND
 
 FEND

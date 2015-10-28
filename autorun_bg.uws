@@ -97,14 +97,8 @@ WHILE TRUE
     KBD(VK_7,CLICK)
   endif
 
-  //----------------------------------------------------
   // アップグレード自動購入
-  //----------------------------------------------------
-  KBD(VK_A,CLICK,300)                 // PULSE PISTOL
-  KBD(VK_S,CLICK,300)                 // FLAK CANNON
-  KBD(VK_D,CLICK,300)                 // SOREAD RIFLE
-  KBD(VK_F,CLICK,300)                 // POCKET LAUNCHER
-  KBD(VK_G,CLICK,300)                 // PARTICLE BALL
+  autoLevelUp()
 
 WEND
 
@@ -146,5 +140,18 @@ FEND
 PROCEDURE printMessageAndDate(message)
 
   PRINT message + " " + TIME_YY + "/" + TIME_MM + "/" + TIME_DD + " " + TIME_HH + ":" + TIME_NN + ":" + TIME_SS
+
+FEND
+
+//---------------------------------------------------------------------
+// アップグレード自動購入
+//---------------------------------------------------------------------
+PROCEDURE autoLevelUp()
+
+  KBD(VK_A,CLICK,100)    // PULSE PISTOL
+  KBD(VK_S,CLICK,100)    // FLAK CANNON
+  KBD(VK_D,CLICK,100)    // SOREAD RIFLE
+  KBD(VK_F,CLICK,100)    // POCKET LAUNCHER
+  KBD(VK_G,CLICK,100)    // PARTICLE BALL
 
 FEND
